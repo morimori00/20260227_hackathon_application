@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from openai import OpenAI
 
-from app.config import OPENAI_API_KEY, OPENAI_MODEL
+from app.config import OPENAI_API_KEY, OPENAI_MODEL, LOCAL_BASE_URL, LOCAL_MODEL, LOCAL_API_KEY
 from app.data_store import DataStore
 
 logger = logging.getLogger(__name__)
@@ -77,11 +77,22 @@ def _execute_code(code: str, df: pd.DataFrame) -> str:
 class ChatbotService:
     def __init__(self, data_store: DataStore):
         self.data_store = data_store
-        self.client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+        self.normal_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+        self.local_client = (
+            OpenAI(api_key=LOCAL_API_KEY, base_url=LOCAL_BASE_URL)
+            if LOCAL_BASE_URL and LOCAL_API_KEY
+            else None
+        )
 
-    def chat(self, messages: list[dict]) -> str:
-        if not self.client:
-            return "OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable."
+    def _get_client_and_model(self, model: str) -> tuple[OpenAI | None, str]:
+        if model == "local" and self.local_client:
+            return self.local_client, LOCAL_MODEL
+        return self.normal_client, OPENAI_MODEL
+
+    def chat(self, messages: list[dict], model: str = "normal") -> str:
+        client, model_name = self._get_client_and_model(model)
+        if not client:
+            return f"API key is not configured for '{model}' model."
 
         api_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         for m in messages:
@@ -89,8 +100,8 @@ class ChatbotService:
 
         # Multi-turn tool calling loop
         for _ in range(10):
-            response = self.client.chat.completions.create(
-                model=OPENAI_MODEL,
+            response = client.chat.completions.create(
+                model=model_name,
                 messages=api_messages,
                 tools=TOOLS,
                 tool_choice="auto",
@@ -113,9 +124,10 @@ class ChatbotService:
 
         return "Maximum tool call iterations reached."
 
-    async def chat_stream(self, messages: list[dict]):
-        if not self.client:
-            yield f"data: {json.dumps({'type': 'content', 'content': 'OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable.'})}\n\n"
+    async def chat_stream(self, messages: list[dict], model: str = "normal"):
+        client, model_name = self._get_client_and_model(model)
+        if not client:
+            yield f"data: {json.dumps({'type': 'content', 'content': f\"API key is not configured for '{model}' model.\"})}\n\n"
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
             return
 
@@ -124,8 +136,8 @@ class ChatbotService:
             api_messages.append({"role": m["role"], "content": m["content"]})
 
         for _ in range(10):
-            stream = self.client.chat.completions.create(
-                model=OPENAI_MODEL,
+            stream = client.chat.completions.create(
+                model=model_name,
                 messages=api_messages,
                 tools=TOOLS,
                 tool_choice="auto",

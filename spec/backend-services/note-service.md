@@ -1,46 +1,46 @@
-# メモサービス設計
+# Note Service Design
 
-## 責務
-取引に対する担当者メモの追加・取得を行う。
+## Responsibility
+Add and retrieve staff notes for transactions.
 
-## 依存
-- DataStore（取引IDの存在確認に使用）
+## Dependencies
+- DataStore (used for transaction ID existence verification)
 
-## データ構造
+## Data Structure
 
 ```python
 @dataclass
 class Note:
-    note_id: str           # "note_001" 形式（自動採番）
-    transaction_id: str    # 対象取引ID
-    content: str           # メモ内容（最大500文字）
-    author: str            # 担当者名
-    created_at: datetime   # 作成日時
+    note_id: str           # Format: "note_001" (auto-incremented)
+    transaction_id: str    # Target transaction ID
+    content: str           # Note content (max 500 characters)
+    author: str            # Staff name
+    created_at: datetime   # Creation time
 ```
 
-### ストレージ
-- インメモリの辞書で管理: `transaction_id → list[Note]`
-- アプリケーション再起動時にリセットされる（本プロトタイプではDB永続化しない）
-- 自動採番カウンター: グローバルなインクリメント
+### Storage
+- Managed in an in-memory dictionary: `transaction_id → list[Note]`
+- Resets on application restart (no DB persistence in this prototype)
+- Auto-increment counter: global increment
 
-## エンドポイント実装
+## Endpoint Implementation
 
 ### GET /api/v1/transactions/:transactionId/notes
-1. transactionId が DataStore に存在するか確認（存在しなければ 404）
-2. メモ辞書から該当取引のメモリストを取得
-3. created_at 降順でソート（新しいメモが先頭）
-4. リストを返却（メモが無い場合は空配列）
+1. Verify that transactionId exists in DataStore (return 404 if not found)
+2. Retrieve the note list for the transaction from the note dictionary
+3. Sort by created_at descending (newest note first)
+4. Return the list (return empty array if no notes exist)
 
 ### POST /api/v1/transactions/:transactionId/notes
-1. transactionId が DataStore に存在するか確認（存在しなければ 404）
-2. リクエストボディのバリデーション:
-   - content: 必須、1〜500文字
-   - author: 必須、1〜100文字
-3. Note オブジェクトを生成（note_id 自動採番、created_at は現在時刻）
-4. メモ辞書に追加
-5. 作成された Note を返却（201 Created）
+1. Verify that transactionId exists in DataStore (return 404 if not found)
+2. Validate the request body:
+   - content: required, 1-500 characters
+   - author: required, 1-100 characters
+3. Create a Note object (note_id auto-incremented, created_at set to current time)
+4. Add to the note dictionary
+5. Return the created Note (201 Created)
 
-## バリデーション
-- transactionId が存在しない場合: 404
-- content が空または500文字超: 422
-- author が空: 422
+## Validation
+- If transactionId does not exist: 404
+- If content is empty or exceeds 500 characters: 422
+- If author is empty: 422

@@ -1,21 +1,21 @@
-# データローダーサービス設計
+# Data Loader Service Design
 
-## 責務
-アプリケーション起動時にCSV/TXTファイルを読み込み、前処理を行い、PredictionServiceでモデル推論を実施した上で、他サービスがクエリ可能な状態にする。
+## Responsibility
+Load CSV/TXT files at application startup, perform preprocessing, run model inference via PredictionService, and make data queryable by other services.
 
-## データソース
-- `data/HI-Small_Trans.csv.csv` — 取引データ（約500万件、不正ラベルなし）
-- `data/HI-Small_accounts.csv` — 口座マスタ（約51万件）
-- `data/HI-Small_Patterns.txt` — 不正パターン定義（370パターン）
+## Data Sources
+- `data/HI-Small_Trans.csv.csv` — Transaction data (approximately 5 million records, no fraud labels)
+- `data/HI-Small_accounts.csv` — Account master data (approximately 510,000 records)
+- `data/HI-Small_Patterns.txt` — Fraud pattern definitions (370 patterns)
 
-**重要**: 実際の取引データには `Is Laundering` カラムが存在しない。不正判定は PredictionService のモデル推論によって付与される。
+**Important**: The actual transaction data does not contain an `Is Laundering` column. Fraud detection is assigned by PredictionService model inference.
 
-## 起動時処理フロー
+## Startup Processing Flow
 
-### 1. 取引データの読み込みと前処理
-1. CSVを pandas DataFrame として読み込む
-2. 重複行を削除
-3. カラム名をスネークケースに正規化:
+### 1. Loading and Preprocessing Transaction Data
+1. Load CSV as a pandas DataFrame
+2. Remove duplicate rows
+3. Normalize column names to snake_case:
    - `Timestamp` → `timestamp`
    - `From Bank` → `from_bank`
    - `Account` → `from_account`
@@ -26,71 +26,71 @@
    - `Amount Paid` → `amount_paid`
    - `Payment Currency` → `payment_currency`
    - `Payment Format` → `payment_format`
-4. `timestamp` を datetime 型に変換
-5. 派生カラムを追加:
-   - `day_of_week`: 曜日名（Monday〜Sunday）
-   - `hour`: 時間（0〜23）
-6. 連番の取引ID `id` を付与（`txn_00000001` 形式）
-7. 全カラムの型を文字列IDは str、金額は float に統一
+4. Convert `timestamp` to datetime type
+5. Add derived columns:
+   - `day_of_week`: day name (Monday-Sunday)
+   - `hour`: hour (0-23)
+6. Assign sequential transaction ID `id` (format: `txn_00000001`)
+7. Unify all column types: string IDs as str, amounts as float
 
-### 2. 口座マスタの読み込み
-1. CSVを読み込み
-2. カラム名を正規化:
+### 2. Loading Account Master Data
+1. Load CSV
+2. Normalize column names:
    - `Bank Name` → `bank_name`
    - `Bank ID` → `bank_id`
    - `Account Number` → `account_id`
    - `Entity ID` → `entity_id`
    - `Entity Name` → `entity_name`
-3. `bank_id` を文字列型に統一
-4. 銀行IDから銀行名への辞書（bank_lookup）を構築
-5. 口座IDから口座情報への辞書（account_lookup）を構築
+3. Unify `bank_id` to string type
+4. Build bank ID to bank name dictionary (bank_lookup)
+5. Build account ID to account info dictionary (account_lookup)
 
-### 3. パターンデータの読み込み
-1. テキストファイルを行単位で解析
-2. `BEGIN LAUNDERING ATTEMPT` 〜 `END LAUNDERING ATTEMPT` のブロックを抽出
-3. 各ブロックから以下を構造化:
-   - `pattern_type`: パターン種別（FAN-OUT, FAN-IN, CYCLE, RANDOM, BIPARTITE, STACK, SCATTER-GATHER, GATHER-SCATTER）
-   - `detail`: 詳細情報（例: "Max 16-degree Fan-Out"）
-   - `transactions`: ブロック内のCSV行を取引データとしてパース（取引IDとの紐付け用に timestamp + from_account + to_account をキーとする）
-4. パターンリストを構築
+### 3. Loading Pattern Data
+1. Parse the text file line by line
+2. Extract blocks between `BEGIN LAUNDERING ATTEMPT` and `END LAUNDERING ATTEMPT`
+3. Structure each block into:
+   - `pattern_type`: pattern type (FAN-OUT, FAN-IN, CYCLE, RANDOM, BIPARTITE, STACK, SCATTER-GATHER, GATHER-SCATTER)
+   - `detail`: detailed information (e.g., "Max 16-degree Fan-Out")
+   - `transactions`: parse CSV lines within the block as transaction data (use timestamp + from_account + to_account as key for linking to transaction IDs)
+4. Build the pattern list
 
-### 4. モデル推論による不正スコア付与（PredictionService に委譲）
-1. PredictionService を初期化（モデルファイルをロード）
-2. 取引DataFrameを PredictionService.predict_batch() に渡す
-3. 返却されたDataFrameには以下のカラムが追加されている:
-   - `prediction`: 予測ラベル（0 = Normal, 1 = Laundering）
-   - `fraud_score`: 不正確率スコア（0.0〜1.0）
-4. PredictionService.get_feature_importances() でモデルの特徴量重要度を取得・保存
+### 4. Fraud Score Assignment via Model Inference (delegated to PredictionService)
+1. Initialize PredictionService (load model files)
+2. Pass the transaction DataFrame to PredictionService.predict_batch()
+3. The returned DataFrame has the following columns added:
+   - `prediction`: prediction label (0 = Normal, 1 = Laundering)
+   - `fraud_score`: fraud probability score (0.0-1.0)
+4. Retrieve and store model feature importances via PredictionService.get_feature_importances()
 
-## 公開インターフェース
+## Public Interface
 
 ```python
 class DataStore:
-    """全データを保持し、他サービスにクエリインターフェースを提供する"""
+    """Holds all data and provides a query interface to other services"""
 
-    # 取引データ（pandas DataFrame）
-    # prediction, fraud_score カラムを含む
+    # Transaction data (pandas DataFrame)
+    # Includes prediction and fraud_score columns
     transactions: pd.DataFrame
 
-    # 口座マスタ
+    # Account master data
     account_lookup: dict[str, AccountInfo]
     bank_lookup: dict[str, str]  # bank_id → bank_name
 
-    # パターンデータ
+    # Pattern data
     patterns: list[PatternInfo]
 
-    # モデル情報（PredictionServiceから取得）
+    # Model information (retrieved from PredictionService)
     feature_importances: list[dict]  # [{"feature": str, "importance": float}]
 
-    # PredictionService インスタンス（個別推論用に保持）
+    # PredictionService instance (retained for individual predictions)
     prediction_service: PredictionService
 ```
 
-## パフォーマンス考慮事項
-- 500万件のDataFrameを全てメモリに保持する（推定メモリ使用量: 約500MB〜1GB）
-- 起動時に1回だけ読み込み、以降は読み取り専用
-- モデル推論は起動時にチャンク分割で実行（10万件ずつ、prediction-service.md 参照）
-- 頻出クエリ用にインデックスを構築:
-  - `from_account` でグループ化した辞書
-  - `to_account` でグループ化した辞書
-  - `prediction == 1` のサブセットを事前抽出
+## Performance Considerations
+- Keep the entire 5 million row DataFrame in memory (estimated memory usage: approximately 500MB-1GB)
+- Load once at startup, read-only thereafter
+- Model inference is executed in chunks at startup (100,000 rows at a time, see prediction-service.md)
+- Build indexes for frequently used queries:
+  - Dictionary grouped by `from_account`
+  - Dictionary grouped by `to_account`
+  - Pre-extracted subset where `prediction == 1`

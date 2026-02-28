@@ -1,13 +1,13 @@
-# ディレクトリ構造
+# Directory Structure
 
 ```
 hackathon/
 ├── docker-compose.yml
 ├── data/
-│   ├── HI-Small_Trans.csv.csv        # 取引データ
-│   ├── HI-Small_accounts.csv         # 口座マスタ
-│   └── HI-Small_Patterns.txt         # 不正パターン定義
-├── spec/                              # 設計書（実装時参照用）
+│   ├── HI-Small_Trans.csv.csv        # Transaction data
+│   ├── HI-Small_accounts.csv         # Account master data
+│   └── HI-Small_Patterns.txt         # Fraud pattern definitions
+├── spec/                              # Design documents (reference during implementation)
 │   ├── overview.md
 │   ├── ui.md
 │   ├── api.md
@@ -28,10 +28,10 @@ hackathon/
 │   ├── Dockerfile
 │   ├── requirements.txt
 │   ├── app/
-│   │   ├── main.py                    # FastAPIアプリケーションエントリーポイント
-│   │   ├── config.py                  # 設定（ファイルパス、定数）
-│   │   ├── data_store.py              # DataStore: データ読み込み・保持・クエリ
-│   │   ├── prediction_service.py      # PredictionService: モデルロード・バッチ推論・特徴量重要度
+│   │   ├── main.py                    # FastAPI application entry point
+│   │   ├── config.py                  # Configuration (file paths, constants)
+│   │   ├── data_store.py              # DataStore: data loading, storage, and querying
+│   │   ├── prediction_service.py      # PredictionService: model loading, batch inference, feature importance
 │   │   ├── routers/
 │   │   │   ├── __init__.py
 │   │   │   ├── transactions.py        # /api/v1/transactions
@@ -53,20 +53,20 @@ hackathon/
 │   │   │   └── master_service.py
 │   │   └── schemas/
 │   │       ├── __init__.py
-│   │       ├── transaction.py         # Pydanticモデル: Transaction, TransactionDetail
-│   │       ├── network.py             # Pydanticモデル: Node, Edge, NetworkResponse
-│   │       ├── account.py             # Pydanticモデル: Account, Counterparty, Timeline
-│   │       ├── alert.py               # Pydanticモデル: Alert, AlertSummary
-│   │       ├── note.py                # Pydanticモデル: Note
-│   │       ├── analytics.py           # Pydanticモデル: Heatmap, Matrix, etc.
-│   │       └── common.py              # 共通: PaginatedResponse, ErrorResponse
+│   │       ├── transaction.py         # Pydantic models: Transaction, TransactionDetail
+│   │       ├── network.py             # Pydantic models: Node, Edge, NetworkResponse
+│   │       ├── account.py             # Pydantic models: Account, Counterparty, Timeline
+│   │       ├── alert.py               # Pydantic models: Alert, AlertSummary
+│   │       ├── note.py                # Pydantic models: Note
+│   │       ├── analytics.py           # Pydantic models: Heatmap, Matrix, etc.
+│   │       └── common.py              # Common: PaginatedResponse, ErrorResponse
 │   ├── saved_model/
-│   │   ├── aml_pipeline.joblib        # 学習済みXGBClassifierパイプライン
-│   │   ├── feature_columns.joblib     # モデル入力特徴量カラム名リスト
-│   │   └── cat_columns.joblib         # カテゴリカラム名リスト
+│   │   ├── aml_pipeline.joblib        # Trained XGBClassifier pipeline
+│   │   ├── feature_columns.joblib     # Model input feature column name list
+│   │   └── cat_columns.joblib         # Categorical column name list
 │   └── tests/
 │       ├── __init__.py
-│       ├── conftest.py                # pytest fixtures（テスト用DataStore等）
+│       ├── conftest.py                # pytest fixtures (test DataStore, etc.)
 │       ├── test_prediction_service.py
 │       ├── test_transaction_service.py
 │       ├── test_network_service.py
@@ -93,25 +93,25 @@ hackathon/
     ├── tailwind.config.js
     ├── index.html
     ├── public/
-    │   └── loading.svg                # ローディングSVGアニメーション
+    │   └── loading.svg                # Loading SVG animation
     ├── src/
-    │   ├── main.tsx                    # エントリーポイント
-    │   ├── App.tsx                     # ルーティング設定
+    │   ├── main.tsx                    # Entry point
+    │   ├── App.tsx                     # Routing configuration
     │   ├── api/
-    │   │   ├── client.ts              # axiosインスタンス（baseURL設定）
-    │   │   ├── transactions.ts        # 取引API呼び出し関数
-    │   │   ├── network.ts             # ネットワークAPI呼び出し関数
-    │   │   ├── accounts.ts            # 口座API呼び出し関数
-    │   │   ├── alerts.ts              # アラートAPI呼び出し関数
-    │   │   ├── notes.ts               # メモAPI呼び出し関数
-    │   │   ├── analytics.ts           # 分析API呼び出し関数
-    │   │   └── master.ts              # マスタAPI呼び出し関数
+    │   │   ├── client.ts              # axios instance (baseURL configuration)
+    │   │   ├── transactions.ts        # Transaction API call functions
+    │   │   ├── network.ts             # Network API call functions
+    │   │   ├── accounts.ts            # Account API call functions
+    │   │   ├── alerts.ts              # Alert API call functions
+    │   │   ├── notes.ts               # Notes API call functions
+    │   │   ├── analytics.ts           # Analytics API call functions
+    │   │   └── master.ts              # Master data API call functions
     │   ├── components/
     │   │   ├── layout/
-    │   │   │   ├── Sidebar.tsx        # サイドバーナビゲーション
-    │   │   │   ├── MainLayout.tsx     # メインレイアウト（サイドバー+コンテンツ）
-    │   │   │   └── Loading.tsx        # SVGローディングコンポーネント
-    │   │   ├── ui/                    # shadcn/uiコンポーネント（自動生成）
+    │   │   │   ├── Sidebar.tsx        # Sidebar navigation
+    │   │   │   ├── MainLayout.tsx     # Main layout (sidebar + content)
+    │   │   │   └── Loading.tsx        # SVG loading component
+    │   │   ├── ui/                    # shadcn/ui components (auto-generated)
     │   │   │   ├── button.tsx
     │   │   │   ├── card.tsx
     │   │   │   ├── table.tsx
@@ -125,67 +125,67 @@ hackathon/
     │   │   │   ├── pagination.tsx
     │   │   │   └── date-picker.tsx
     │   │   ├── network/
-    │   │   │   ├── NetworkGraph.tsx    # 力学モデルグラフ（D3.js or react-force-graph）
-    │   │   │   └── PatternPanel.tsx   # パターン検出パネル
+    │   │   │   ├── NetworkGraph.tsx    # Force-directed graph (D3.js or react-force-graph)
+    │   │   │   └── PatternPanel.tsx   # Pattern detection panel
     │   │   ├── transactions/
-    │   │   │   ├── TransactionCard.tsx # 取引情報カード
-    │   │   │   ├── FraudScoreDisplay.tsx # 不正スコア表示
-    │   │   │   └── FeatureImportanceChart.tsx # 特徴量重要度棒グラフ
+    │   │   │   ├── TransactionCard.tsx # Transaction information card
+    │   │   │   ├── FraudScoreDisplay.tsx # Fraud score display
+    │   │   │   └── FeatureImportanceChart.tsx # Feature importance bar chart
     │   │   ├── accounts/
-    │   │   │   ├── AccountHeader.tsx   # 口座情報ヘッダー
-    │   │   │   ├── SummaryCards.tsx    # サマリーカード
-    │   │   │   └── TimelineChart.tsx   # 取引金額推移グラフ
+    │   │   │   ├── AccountHeader.tsx   # Account information header
+    │   │   │   ├── SummaryCards.tsx    # Summary cards
+    │   │   │   └── TimelineChart.tsx   # Transaction amount trend graph
     │   │   ├── alerts/
-    │   │   │   ├── AlertTable.tsx      # アラートテーブル
-    │   │   │   ├── AlertFilters.tsx    # フィルターバー
-    │   │   │   └── StatusBadge.tsx     # ステータスバッジ
+    │   │   │   ├── AlertTable.tsx      # Alert table
+    │   │   │   ├── AlertFilters.tsx    # Filter bar
+    │   │   │   └── StatusBadge.tsx     # Status badge
     │   │   └── analytics/
-    │   │       ├── Heatmap.tsx         # 曜日×時間帯ヒートマップ
-    │   │       ├── CurrencyPaymentMatrix.tsx # クロス集計テーブル
-    │   │       ├── HighRiskBanksChart.tsx    # 高リスク銀行棒グラフ
-    │   │       ├── FeatureImportanceChart.tsx # 特徴量重要度棒グラフ
-    │   │       └── PatternDistribution.tsx    # パターン種別ドーナツチャート
+    │   │       ├── Heatmap.tsx         # Day-of-week x hour heatmap
+    │   │       ├── CurrencyPaymentMatrix.tsx # Cross-tabulation table
+    │   │       ├── HighRiskBanksChart.tsx    # High-risk bank bar chart
+    │   │       ├── FeatureImportanceChart.tsx # Feature importance bar chart
+    │   │       └── PatternDistribution.tsx    # Pattern type donut chart
     │   ├── pages/
-    │   │   ├── NetworkPage.tsx         # 取引ネットワーク可視化ページ
-    │   │   ├── TransactionDetailPage.tsx # 取引詳細ページ
-    │   │   ├── AccountProfilePage.tsx  # 口座プロファイルページ
-    │   │   ├── AlertsPage.tsx          # アラート一覧ページ
-    │   │   └── AnalyticsPage.tsx       # パターン分析ページ
+    │   │   ├── NetworkPage.tsx         # Transaction network visualization page
+    │   │   ├── TransactionDetailPage.tsx # Transaction detail page
+    │   │   ├── AccountProfilePage.tsx  # Account profile page
+    │   │   ├── AlertsPage.tsx          # Alert list page
+    │   │   └── AnalyticsPage.tsx       # Pattern analysis page
     │   ├── hooks/
-    │   │   ├── useTransactions.ts      # 取引データ取得hooks
-    │   │   ├── useNetwork.ts           # ネットワークデータ取得hooks
-    │   │   ├── useAccounts.ts          # 口座データ取得hooks
-    │   │   ├── useAlerts.ts            # アラートデータ取得hooks
-    │   │   └── useAnalytics.ts         # 分析データ取得hooks
+    │   │   ├── useTransactions.ts      # Transaction data fetch hooks
+    │   │   ├── useNetwork.ts           # Network data fetch hooks
+    │   │   ├── useAccounts.ts          # Account data fetch hooks
+    │   │   ├── useAlerts.ts            # Alert data fetch hooks
+    │   │   └── useAnalytics.ts         # Analytics data fetch hooks
     │   ├── lib/
-    │   │   └── utils.ts               # ユーティリティ関数
+    │   │   └── utils.ts               # Utility functions
     │   └── styles/
-    │       └── globals.css            # グローバルCSS（Tailwind directives）
-    └── components.json                # shadcn/ui設定
+    │       └── globals.css            # Global CSS (Tailwind directives)
+    └── components.json                # shadcn/ui configuration
 ```
 
-## 技術スタック詳細
+## Technology Stack Details
 
-### バックエンド
+### Backend
 - Python 3.11
 - FastAPI
-- pandas（データ操作）
-- XGBoost（モデル推論）
-- uvicorn（ASGIサーバー）
-- pytest（テスト）
+- pandas (data manipulation)
+- XGBoost (model inference)
+- uvicorn (ASGI server)
+- pytest (testing)
 
-### フロントエンド
+### Frontend
 - React 18
 - TypeScript
-- Vite（ビルドツール）
+- Vite (build tool)
 - Tailwind CSS
-- shadcn/ui（UIコンポーネント）
-- D3.js または react-force-graph（ネットワーク可視化）
-- Recharts（チャート: 棒グラフ、折れ線、ドーナツ）
-- axios（API通信）
-- React Router v6（ルーティング）
+- shadcn/ui (UI components)
+- D3.js or react-force-graph (network visualization)
+- Recharts (charts: bar, line, donut)
+- axios (API communication)
+- React Router v6 (routing)
 
-### インフラ
+### Infrastructure
 - Docker Compose
-  - `backend` サービス: Python + FastAPI（ポート8000）
-  - `frontend` サービス: Node + Vite dev server（ポート5173）→ 本番はnginx（ポート80）
+  - `backend` service: Python + FastAPI (port 8000)
+  - `frontend` service: Node + Vite dev server (port 5173) → production: nginx (port 80)

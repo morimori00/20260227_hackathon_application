@@ -1,35 +1,35 @@
-# マスタデータサービス設計
+# Master Data Service Design
 
-## 責務
-フロントエンドのフィルター用ドロップダウンに使用する銀行・通貨・支払手段の一覧と、口座検索のオートコンプリートを提供する。
+## Responsibility
+Provide lists of banks, currencies, and payment methods for frontend filter dropdowns, and autocomplete for account search.
 
-## 依存
-- DataStore（データローダーサービス）
+## Dependencies
+- DataStore (data loader service)
 
-## エンドポイント実装
+## Endpoint Implementation
 
 ### GET /api/v1/master/banks
-1. DataStore.bank_lookup から全銀行を取得
-2. bank_name の昇順でソート
-3. `[{ "bank_id": str, "bank_name": str }]` の配列を返却
+1. Retrieve all banks from DataStore.bank_lookup
+2. Sort by bank_name ascending
+3. Return an array of `[{ "bank_id": str, "bank_name": str }]`
 
 ### GET /api/v1/master/currencies
-1. DataStore.transactions の `payment_currency` カラムのユニーク値を取得
-2. アルファベット順でソート
-3. 文字列の配列を返却
+1. Get unique values from the `payment_currency` column of DataStore.transactions
+2. Sort alphabetically
+3. Return an array of strings
 
 ### GET /api/v1/master/payment-formats
-1. DataStore.transactions の `payment_format` カラムのユニーク値を取得
-2. アルファベット順でソート
-3. 文字列の配列を返却
+1. Get unique values from the `payment_format` column of DataStore.transactions
+2. Sort alphabetically
+3. Return an array of strings
 
 ### GET /api/v1/accounts/search
-1. クエリ文字列 `q` を受け取る（最低1文字）
-2. DataStore.account_lookup のキー（口座ID）に対して前方一致検索
-3. 一致した口座について bank_id, bank_name を付与
-4. 最大 `limit` 件を返却（デフォルト10件）
-5. 結果が無い場合は空配列を返却
+1. Receive query string `q` (minimum 1 character)
+2. Perform prefix match search on the keys (account IDs) of DataStore.account_lookup
+3. Add bank_id and bank_name to matched accounts
+4. Return at most `limit` entries (default: 10)
+5. Return empty array if no results
 
-## パフォーマンス考慮事項
-- banks, currencies, payment_formats は起動時に1回だけ計算してキャッシュする（リクエスト毎に再計算しない）
-- accounts/search の前方一致検索は口座IDのソート済みリストに対して二分探索で高速化する
+## Performance Considerations
+- banks, currencies, and payment_formats are computed once at startup and cached (not recomputed per request)
+- The prefix match search for accounts/search is optimized via binary search on a sorted account ID list

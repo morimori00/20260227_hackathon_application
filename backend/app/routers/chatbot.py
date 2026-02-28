@@ -27,7 +27,7 @@ def chat(
     svc: ChatbotService = Depends(get_chatbot_service),
 ):
     messages = [{"role": m.role, "content": m.content} for m in body.messages]
-    content = svc.chat(messages)
+    content = svc.chat(messages, model=body.model)
     return {"data": {"content": content}}
 
 
@@ -38,7 +38,7 @@ async def chat_stream(
 ):
     messages = [{"role": m.role, "content": m.content} for m in body.messages]
     return StreamingResponse(
-        svc.chat_stream(messages),
+        svc.chat_stream(messages, model=body.model),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

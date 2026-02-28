@@ -1,22 +1,22 @@
-# 取引サービス設計
+# Transaction Service Design
 
-## 責務
-取引データの検索・取得・詳細表示を行う。
+## Responsibility
+Search, retrieve, and display detailed transaction data.
 
-## 依存
-- DataStore（データローダーサービス）
+## Dependencies
+- DataStore (data loader service)
 
-## エンドポイント実装
+## Endpoint Implementation
 
 ### GET /api/v1/transactions
-DataStore.transactions に対して以下を行う:
-1. クエリパラメータに応じたフィルタリング（pandas の条件式で絞り込み）
-2. ソートカラム・ソート順の適用
-3. ページネーション（offset / limit の計算）
-4. bank_lookup を使って銀行名を付与
-5. レスポンス形式に整形して返却
+Perform the following on DataStore.transactions:
+1. Filter based on query parameters (narrow down using pandas conditional expressions)
+2. Apply sort column and sort order
+3. Pagination (calculate offset / limit)
+4. Add bank names using bank_lookup
+5. Format and return the response
 
-フィルタリングロジック:
+Filtering logic:
 - `from_bank`: `df[df['from_bank'] == value]`
 - `to_bank`: `df[df['to_bank'] == value]`
 - `account_id`: `df[(df['from_account'] == value) | (df['to_account'] == value)]`
@@ -27,12 +27,12 @@ DataStore.transactions に対して以下を行う:
 - `prediction`: `df[df['prediction'] == value]`
 
 ### GET /api/v1/transactions/:transactionId
-1. DataStore.transactions から ID で1件取得
-2. account_lookup を使って送金元・送金先のエンティティ情報を付与
-3. モデルの個別取引に対する特徴量重要度を算出:
-   - XGBClassifier の SHAP 値、またはグローバル feature_importances を返却
-   - 上位5件の特徴量名と重要度を返却
+1. Retrieve a single record by ID from DataStore.transactions
+2. Add entity information for sender and receiver using account_lookup
+3. Calculate feature importance for the individual transaction from the model:
+   - Return SHAP values from XGBClassifier, or return global feature_importances
+   - Return the top 5 feature names and importances
 
-## バリデーション
-- transactionId が存在しない場合: 404
-- 不正なクエリパラメータ型: 422
+## Validation
+- If transactionId does not exist: 404
+- Invalid query parameter type: 422

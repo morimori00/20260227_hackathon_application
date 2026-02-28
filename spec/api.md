@@ -1,16 +1,16 @@
-# API設計書
+# API Design Document
 
-## 共通仕様
+## Common Specifications
 
-### ベースURL
+### Base URL
 ```
 http://localhost:8000/api/v1
 ```
 
-### レスポンス形式
-全エンドポイントJSON形式で返却する。
+### Response Format
+All endpoints return responses in JSON format.
 
-成功時:
+Success:
 ```json
 {
   "data": { ... },
@@ -18,7 +18,7 @@ http://localhost:8000/api/v1
 }
 ```
 
-エラー時:
+Error:
 ```json
 {
   "error": {
@@ -28,45 +28,45 @@ http://localhost:8000/api/v1
 }
 ```
 
-### ページネーション
-リスト系エンドポイントはクエリパラメータ `page`（デフォルト1）と `per_page`（デフォルト20、最大100）で制御する。
+### Pagination
+List endpoints are controlled via query parameters `page` (default: 1) and `per_page` (default: 20, max: 100).
 
-### 日時フォーマット
-ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
+### Date/Time Format
+ISO 8601 format `YYYY-MM-DDTHH:MM:SS`
 
-### 不正判定について
-取引データに不正ラベル（`Is Laundering`）は含まれない。全ての不正判定は起動時にXGBClassifierパイプライン（`saved_model/aml_pipeline.joblib`）によるバッチ推論で付与される。
-- `prediction`: モデルの予測ラベル（0=正常, 1=不正）
-- `fraud_score`: モデルの不正クラス確率（0.0〜1.0）
+### About Fraud Detection
+The transaction data does not include a fraud label (`Is Laundering`). All fraud decisions are assigned via batch inference using the XGBClassifier pipeline (`saved_model/aml_pipeline.joblib`) at startup.
+- `prediction`: model prediction label (0 = normal, 1 = fraud)
+- `fraud_score`: model fraud class probability (0.0-1.0)
 
 ---
 
-## エンドポイント一覧
+## Endpoint List
 
-### 1. 取引 (Transactions)
+### 1. Transactions
 
 #### GET /transactions
-取引一覧を取得する。
+Retrieve the transaction list.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| page | int | No | ページ番号（デフォルト: 1） |
-| per_page | int | No | 1ページあたり件数（デフォルト: 20） |
-| from_bank | string | No | 送金元銀行IDでフィルタ |
-| to_bank | string | No | 送金先銀行IDでフィルタ |
-| account_id | string | No | 口座ID（送金元または送金先）でフィルタ |
-| currency | string | No | 支払通貨でフィルタ |
-| payment_format | string | No | 支払手段でフィルタ |
-| min_amount | float | No | 最小金額 |
-| max_amount | float | No | 最大金額 |
-| start_date | string | No | 開始日時（ISO 8601） |
-| end_date | string | No | 終了日時（ISO 8601） |
-| prediction | int | No | モデル予測ラベル（0=正常, 1=不正） |
-| sort_by | string | No | ソートカラム（デフォルト: timestamp） |
-| sort_order | string | No | asc / desc（デフォルト: desc） |
+| page | int | No | Page number (default: 1) |
+| per_page | int | No | Items per page (default: 20) |
+| from_bank | string | No | Filter by sender bank ID |
+| to_bank | string | No | Filter by receiver bank ID |
+| account_id | string | No | Filter by account ID (sender or receiver) |
+| currency | string | No | Filter by payment currency |
+| payment_format | string | No | Filter by payment method |
+| min_amount | float | No | Minimum amount |
+| max_amount | float | No | Maximum amount |
+| start_date | string | No | Start date/time (ISO 8601) |
+| end_date | string | No | End date/time (ISO 8601) |
+| prediction | int | No | Model prediction label (0 = normal, 1 = fraud) |
+| sort_by | string | No | Sort column (default: timestamp) |
+| sort_order | string | No | asc / desc (default: desc) |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -93,9 +93,9 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /transactions/:transactionId
-取引詳細を取得する。
+Retrieve transaction details.
 
-レスポンス:
+Response:
 ```json
 {
   "data": {
@@ -129,20 +129,20 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 
 ---
 
-### 2. ネットワーク (Network)
+### 2. Network
 
 #### GET /network
-指定口座を起点としたネットワークグラフデータを取得する。
+Retrieve network graph data starting from a specified account.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| account_id | string | Yes | 起点口座ID |
-| hops | int | No | 探索ホップ数（デフォルト: 2、最大: 5） |
-| start_date | string | No | 開始日時 |
-| end_date | string | No | 終了日時 |
+| account_id | string | Yes | Origin account ID |
+| hops | int | No | Number of exploration hops (default: 2, max: 5) |
+| start_date | string | No | Start date/time |
+| end_date | string | No | End date/time |
 
-レスポンス:
+Response:
 ```json
 {
   "data": {
@@ -185,12 +185,12 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 
 ---
 
-### 3. 口座 (Accounts)
+### 3. Accounts
 
 #### GET /accounts/:accountId
-口座プロファイルを取得する。
+Retrieve account profile.
 
-レスポンス:
+Response:
 ```json
 {
   "data": {
@@ -210,30 +210,30 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /accounts/:accountId/transactions
-口座の取引履歴を取得する。
+Retrieve account transaction history.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| page | int | No | ページ番号 |
-| per_page | int | No | 1ページあたり件数 |
-| direction | string | No | sent / received / all（デフォルト: all） |
-| start_date | string | No | 開始日時 |
-| end_date | string | No | 終了日時 |
+| page | int | No | Page number |
+| per_page | int | No | Items per page |
+| direction | string | No | sent / received / all (default: all) |
+| start_date | string | No | Start date/time |
+| end_date | string | No | End date/time |
 
-レスポンスは GET /transactions と同じ形式。
+Response is in the same format as GET /transactions.
 
 #### GET /accounts/:accountId/counterparties
-取引先口座一覧を取得する。
+Retrieve counterparty account list.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| direction | string | No | sent / received / all（デフォルト: all） |
-| sort_by | string | No | transaction_count / total_amount / last_transaction（デフォルト: transaction_count） |
-| sort_order | string | No | asc / desc（デフォルト: desc） |
+| direction | string | No | sent / received / all (default: all) |
+| sort_by | string | No | transaction_count / total_amount / last_transaction (default: transaction_count) |
+| sort_order | string | No | asc / desc (default: desc) |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -252,15 +252,15 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /accounts/:accountId/timeline
-口座の日別取引金額推移を取得する。
+Retrieve daily transaction amount trends for the account.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| start_date | string | No | 開始日 |
-| end_date | string | No | 終了日 |
+| start_date | string | No | Start date |
+| end_date | string | No | End date |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -278,31 +278,31 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 
 ---
 
-### 4. アラート (Alerts)
+### 4. Alerts
 
 #### GET /alerts
-モデルが不正と判定した取引（アラート）の一覧を取得する。
+Retrieve the list of transactions flagged as fraudulent by the model (alerts).
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| page | int | No | ページ番号 |
-| per_page | int | No | 1ページあたり件数 |
-| status | string | No | カンマ区切りで複数指定可（pending / investigating / resolved / false_positive） |
-| from_bank | string | No | 送金元銀行ID |
-| to_bank | string | No | 送金先銀行ID |
-| currency | string | No | 通貨 |
-| payment_format | string | No | 支払手段 |
-| min_amount | float | No | 最小金額 |
-| max_amount | float | No | 最大金額 |
-| min_score | float | No | 最小不正スコア（0.0〜1.0） |
-| max_score | float | No | 最大不正スコア（0.0〜1.0） |
-| start_date | string | No | 開始日時 |
-| end_date | string | No | 終了日時 |
-| sort_by | string | No | fraud_score / timestamp / amount（デフォルト: fraud_score） |
-| sort_order | string | No | asc / desc（デフォルト: desc） |
+| page | int | No | Page number |
+| per_page | int | No | Items per page |
+| status | string | No | Comma-separated, multiple values allowed (pending / investigating / resolved / false_positive) |
+| from_bank | string | No | Sender bank ID |
+| to_bank | string | No | Receiver bank ID |
+| currency | string | No | Currency |
+| payment_format | string | No | Payment method |
+| min_amount | float | No | Minimum amount |
+| max_amount | float | No | Maximum amount |
+| min_score | float | No | Minimum fraud score (0.0-1.0) |
+| max_score | float | No | Maximum fraud score (0.0-1.0) |
+| start_date | string | No | Start date/time |
+| end_date | string | No | End date/time |
+| sort_by | string | No | fraud_score / timestamp / amount (default: fraud_score) |
+| sort_order | string | No | asc / desc (default: desc) |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -328,9 +328,9 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /alerts/summary
-アラートのサマリー統計を取得する。
+Retrieve alert summary statistics.
 
-レスポンス:
+Response:
 ```json
 {
   "data": {
@@ -347,16 +347,16 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### PATCH /alerts/:alertId/status
-アラートのステータスを更新する。
+Update an alert's status.
 
-リクエストボディ:
+Request Body:
 ```json
 {
   "status": "investigating"
 }
 ```
 
-レスポンス:
+Response:
 ```json
 {
   "data": {
@@ -369,19 +369,19 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 
 ---
 
-### 5. メモ (Notes)
+### 5. Notes
 
 #### GET /transactions/:transactionId/notes
-取引に対する担当者メモ一覧を取得する。
+Retrieve the list of staff notes for a transaction.
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
     {
       "note_id": "note_001",
       "transaction_id": "txn_04742",
-      "content": "関連パターンを調査中。FAN-OUTパターンの起点口座。",
+      "content": "Investigating related patterns. Origin account of FAN-OUT pattern.",
       "author": "operator_01",
       "created_at": "2024-01-15T10:30:00"
     }
@@ -390,32 +390,32 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### POST /transactions/:transactionId/notes
-取引にメモを追加する。
+Add a note to a transaction.
 
-リクエストボディ:
+Request Body:
 ```json
 {
-  "content": "調査完了。正当な取引と判断。",
+  "content": "Investigation complete. Determined to be a legitimate transaction.",
   "author": "operator_01"
 }
 ```
 
-レスポンス: 作成されたメモオブジェクト（201 Created）。
+Response: Created note object (201 Created).
 
 ---
 
-### 6. 分析 (Analytics)
+### 6. Analytics
 
 #### GET /analytics/heatmap
-曜日×時間帯の不正取引件数ヒートマップデータを取得する。
+Retrieve heatmap data of fraud transaction counts by day-of-week x hour.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| start_date | string | No | 開始日 |
-| end_date | string | No | 終了日 |
+| start_date | string | No | Start date |
+| end_date | string | No | End date |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -426,15 +426,15 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /analytics/currency-payment-matrix
-支払手段×通貨の不正率クロス集計を取得する。
+Retrieve fraud rate cross-tabulation by payment method x currency.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| start_date | string | No | 開始日 |
-| end_date | string | No | 終了日 |
+| start_date | string | No | Start date |
+| end_date | string | No | End date |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -450,17 +450,17 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /analytics/high-risk-banks
-高リスク銀行ランキングを取得する。
+Retrieve high-risk bank ranking.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| metric | string | No | count / amount（デフォルト: count） |
-| limit | int | No | 上位N件（デフォルト: 10） |
-| start_date | string | No | 開始日 |
-| end_date | string | No | 終了日 |
+| metric | string | No | count / amount (default: count) |
+| limit | int | No | Top N entries (default: 10) |
+| start_date | string | No | Start date |
+| end_date | string | No | End date |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -475,9 +475,9 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /analytics/feature-importances
-モデルの特徴量重要度を取得する。
+Retrieve model feature importances.
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -488,15 +488,15 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /analytics/pattern-distribution
-不正パターン種別分布を取得する。
+Retrieve fraud pattern type distribution.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| start_date | string | No | 開始日 |
-| end_date | string | No | 終了日 |
+| start_date | string | No | Start date |
+| end_date | string | No | End date |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -514,12 +514,12 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 
 ---
 
-### 7. マスタデータ (Master)
+### 7. Master Data
 
 #### GET /master/banks
-銀行一覧を取得する（フィルター用ドロップダウンのデータソース）。
+Retrieve bank list (data source for filter dropdowns).
 
-レスポンス:
+Response:
 ```json
 {
   "data": [
@@ -530,9 +530,9 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /master/currencies
-通貨一覧を取得する。
+Retrieve currency list.
 
-レスポンス:
+Response:
 ```json
 {
   "data": ["US Dollar", "Bitcoin", "Euro", "Australian Dollar", "Yuan", "Rupee", "Yen", "Mexican Peso", "UK Pound", "Ruble", "Canadian Dollar", "Swiss Franc", "Brazil Real", "Saudi Riyal", "Shekel"]
@@ -540,9 +540,9 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /master/payment-formats
-支払手段一覧を取得する。
+Retrieve payment method list.
 
-レスポンス:
+Response:
 ```json
 {
   "data": ["Reinvestment", "Cheque", "Credit Card", "ACH", "Cash", "Wire", "Bitcoin"]
@@ -550,15 +550,15 @@ ISO 8601形式 `YYYY-MM-DDTHH:MM:SS`
 ```
 
 #### GET /accounts/search
-口座IDのオートコンプリート検索用。
+For account ID autocomplete search.
 
-クエリパラメータ:
-| パラメータ | 型 | 必須 | 説明 |
+Query Parameters:
+| Parameter | Type | Required | Description |
 |---|---|---|---|
-| q | string | Yes | 検索文字列（前方一致） |
-| limit | int | No | 最大件数（デフォルト: 10） |
+| q | string | Yes | Search string (prefix match) |
+| limit | int | No | Maximum results (default: 10) |
 
-レスポンス:
+Response:
 ```json
 {
   "data": [

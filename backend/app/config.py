@@ -20,3 +20,7 @@ MAX_NETWORK_EDGES = 1000
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
+
+LOCAL_BASE_URL = os.environ.get("LOCAL_BASE_URL", "")
+LOCAL_MODEL = os.environ.get("LOCAL_MODEL", "")
+LOCAL_API_KEY = os.environ.get("LOCAL_API_KEY", "")

@@ -1,59 +1,59 @@
-学習済みモデルを使用した不正検知ダッシュボード
+# Fraud Detection Dashboard Using a Trained Model
 
-## 背景
+## Background
 
-IBM合成取引データ（HI-Small_Trans.csv、約500万件）で学習したXGBClassifierモデルを活用し、銀行担当者がマネーロンダリングの疑いがある取引を効率的に検知・調査できるダッシュボードを構築する。
+Leveraging an XGBClassifier model trained on IBM synthetic transaction data (HI-Small_Trans.csv, approximately 5 million records), build a dashboard that enables bank staff to efficiently detect and investigate transactions suspected of money laundering.
 
 ---
 
-## 案1: リアルタイムアラート監視ダッシュボード
+## Concept: Real-Time Alert Monitoring Dashboard
 
-### 目的
-不正の疑いがある取引をリアルタイムで検知し、不正の疑いがある取引を深掘り調査し、関連する取引パターンやネットワークを分析する。精度の高い判断を支援する。
+### Purpose
+Detect transactions suspected of fraud in real time, allow deep-dive investigation into suspicious transactions, analyze related transaction patterns and networks, and support high-accuracy decision-making.
 
-### 使用者例
-- コンプライアンス部門のオペレーター（日常監視業務）
-- AML（アンチマネーロンダリング）チームのシフト担当者
-- AML調査官（個別案件の詳細調査）
-- 内部監査チームのアナリスト
+### Target Users
+- Compliance department operators (daily monitoring tasks)
+- AML (Anti-Money Laundering) team shift staff
+- AML investigators (detailed investigation of individual cases)
+- Internal audit team analysts
 
-### ページ一覧と機能
+### Pages and Features
 
-#### 1. 取引ネットワーク可視化ページ
-- 口座間の資金フローをノード・エッジのグラフで表示
-- 不正スコアの高い経路を赤色でハイライト
-- 特定口座を起点とした N ホップ以内の関連取引の探索
-- ネットワーク上の異常パターン（循環送金、扇形送金）の自動検出表示
+#### 1. Transaction Network Visualization Page
+- Display fund flows between accounts as a node-edge graph
+- Highlight paths with high fraud scores in red
+- Explore related transactions within N hops from a specified account
+- Auto-detect and display anomalous patterns on the network (circular transfers, fan-shaped transfers)
 
-#### 1.1 取引詳細ページ
-- 選択した取引の全カラム情報を表示
-- 同一口座の過去取引履歴の一覧
-- モデルの予測確率と、判定に寄与した特徴量の重要度表示
-- 担当者メモの記録欄
+#### 1.1 Transaction Detail Page
+- Display all column information for the selected transaction
+- List of past transaction history for the same account
+- Display model prediction probability and feature importance contributing to the decision
+- Staff note recording field
 
-#### 1.2 口座プロファイルページ
-- 指定口座の取引サマリー（総取引数、平均金額、主要取引先）
-- 時系列での取引金額推移グラフ
-- その口座に関連する不正フラグ付き取引のハイライト表示
-- 送金先・送金元の口座一覧と各口座の不正スコア
-
-
-#### 2. アラート一覧ページ
-- モデルが「不正」と判定した取引のリアルタイムリスト表示
-- 不正確率スコア（予測確率）による並び替え
-- ステータス管理（未対応 / 調査中 / 対応済み / 誤検知）
-- 送金元銀行・送金先銀行・金額・通貨・支払手段でのフィルタリング
+#### 1.2 Account Profile Page
+- Transaction summary for the specified account (total transactions, average amount, major counterparties)
+- Time-series transaction amount trend graph
+- Highlight display of fraud-flagged transactions related to the account
+- List of sender/receiver accounts with their fraud scores
 
 
-#### 3. パターン分析ページ
-- 曜日別・時間帯別の不正取引分布ヒートマップ
-- 支払手段×通貨のクロス集計による不正率テーブル
-- 高リスク銀行ランキング（不正取引件数・金額ベース）
-- モデルの特徴量重要度ランキング表示
+#### 2. Alert List Page
+- Real-time list display of transactions flagged as "fraudulent" by the model
+- Sorting by fraud probability score (prediction probability)
+- Status management (Pending / Investigating / Resolved / False Positive)
+- Filtering by sender bank, receiver bank, amount, currency, and payment method
+
+
+#### 3. Pattern Analysis Page
+- Heatmap of fraud transaction distribution by day of week and time of day
+- Fraud rate table via cross-tabulation of payment method x currency
+- High-risk bank ranking (based on fraud transaction count and amount)
+- Model feature importance ranking display
 
 
 
-## 技術スタック
+## Technology Stack
 
 docker compose
 
@@ -62,14 +62,14 @@ backend: python+fastapi
 
 ## /spec
 
-- ui.md: ユーザーインターフェース設計 #マークダウンでUIを描くのではなく、ページごとに必要な要素を文章で細かく記載する
-- directry.md: ディレクトリ構造
-- backend-service/ : バックエンドサービスごとの設計
-- backend.test.plan.md: バックエンドテスト計画
-- api.md: API仕様
+- ui.md: User interface design — describes required elements per page in detail (not markdown UI mockups)
+- directry.md: Directory structure
+- backend-service/: Design per backend service
+- backend.test.plan.md: Backend test plan
+- api.md: API specification
 
-実装時には必ず/specを参照してください。
+Always refer to /spec when implementing.
 
-# デザイン
-notion スタイルのミニマムで洗練されたデザイン
-ローディングにはsvgアニメーションを表示
+# Design
+Notion-style minimal and refined design
+Display SVG animation for loading states

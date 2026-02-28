@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import MessageBubble from '@/components/chatbot/MessageBubble';
 import CodeBlock from '@/components/chatbot/CodeBlock';
 import ChatInput from '@/components/chatbot/ChatInput';
-import { sendChatStream, type ChatMessage, type StreamEvent } from '@/api/chatbot';
+import { sendChatStream, type ChatMessage, type StreamEvent, type ModelType } from '@/api/chatbot';
 
 interface DisplayMessage {
   role: 'user' | 'assistant';
@@ -19,6 +19,7 @@ const EXAMPLE_PROMPTS = [
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<ModelType>('normal');
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -71,7 +72,8 @@ export default function ChatbotPage() {
             return updated;
           });
         },
-        abortRef.current.signal
+        abortRef.current.signal,
+        selectedModel
       );
     } catch (e: any) {
       if (e.name !== 'AbortError') {
@@ -99,10 +101,38 @@ export default function ChatbotPage() {
   return (
     <div className="flex flex-col h-full max-w-[900px] mx-auto">
       <div className="p-6 pb-0">
-        <h1 className="text-xl font-semibold">Analysis Chatbot</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Ask questions about the transaction data. The assistant can execute Python/pandas code to analyze the live dataset.
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold">Analysis Chatbot</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Ask questions about the transaction data. The assistant can execute Python/pandas code to analyze the live dataset.
+            </p>
+          </div>
+          <div className="flex items-center gap-1 rounded-lg border bg-muted p-1 shrink-0">
+            <button
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                selectedModel === 'normal'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setSelectedModel('normal')}
+              disabled={streaming}
+            >
+              normal
+            </button>
+            <button
+              className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                selectedModel === 'local'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => setSelectedModel('local')}
+              disabled={streaming}
+            >
+              local
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4">

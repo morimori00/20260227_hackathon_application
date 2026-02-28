@@ -10,15 +10,18 @@ export interface StreamEvent {
   output?: string;
 }
 
+export type ModelType = 'normal' | 'local';
+
 export async function sendChatStream(
   messages: ChatMessage[],
   onEvent: (event: StreamEvent) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  model: ModelType = 'normal'
 ) {
   const response = await fetch('/api/v1/chat/stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, model }),
     signal,
   });
 

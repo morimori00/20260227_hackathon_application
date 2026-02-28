@@ -1,173 +1,173 @@
-# バックエンドテスト計画
+# Backend Test Plan
 
-## テスト方針
+## Test Strategy
 
-### テストレベル
-1. **サービス層ユニットテスト** — 各サービスのビジネスロジックを検証
-2. **ルーターE2Eテスト** — FastAPI TestClient でAPIエンドポイントの入出力を検証
+### Test Levels
+1. **Service Layer Unit Tests** — Verify business logic of each service
+2. **Router E2E Tests** — Verify API endpoint input/output using FastAPI TestClient
 
-### テストデータ
-- 本番データ（500万件）はテストに使用しない
-- テスト用のフィクスチャとして少量のサンプルデータ（100件程度）を conftest.py で定義
-- サンプルデータには prediction=0（正常）と prediction=1（不正）の両方を含める（比率は50:50でテストしやすくする）
-- PredictionService はモック化し、テスト用の固定 fraud_score / prediction を返すようにする
+### Test Data
+- Production data (5 million records) is not used in tests
+- Define a small sample dataset (approximately 100 records) as test fixtures in conftest.py
+- Sample data includes both prediction=0 (normal) and prediction=1 (fraud) (50:50 ratio for ease of testing)
+- PredictionService is mocked to return fixed fraud_score / prediction values
 
-### テストフレームワーク
+### Test Framework
 - pytest
-- FastAPI TestClient（httpx ベース）
-- conftest.py でテスト用 DataStore を fixtures として提供
+- FastAPI TestClient (httpx-based)
+- conftest.py provides test DataStore as fixtures
 
 ---
 
-## conftest.py フィクスチャ設計
+## conftest.py Fixture Design
 
 ```python
 @pytest.fixture
 def sample_transactions() -> pd.DataFrame:
-    """100件のサンプル取引データ（50件正常 + 50件不正）"""
+    """100 sample transaction records (50 normal + 50 fraud)"""
 
 @pytest.fixture
 def sample_accounts() -> dict:
-    """10口座分のサンプル口座マスタ"""
+    """Sample account master data for 10 accounts"""
 
 @pytest.fixture
 def sample_patterns() -> list:
-    """3パターン分のサンプル不正パターン（CYCLE, FAN-OUT, BIPARTITE）"""
+    """3 sample fraud patterns (CYCLE, FAN-OUT, BIPARTITE)"""
 
 @pytest.fixture
 def mock_prediction_service() -> PredictionService:
-    """モック化したPredictionService（固定スコアを返す）"""
+    """Mocked PredictionService (returns fixed scores)"""
 
 @pytest.fixture
 def data_store(sample_transactions, sample_accounts, sample_patterns, mock_prediction_service) -> DataStore:
-    """テスト用DataStoreインスタンス（prediction/fraud_score カラム付与済み）"""
+    """Test DataStore instance (with prediction/fraud_score columns applied)"""
 
 @pytest.fixture
 def app(data_store) -> FastAPI:
-    """テスト用FastAPIアプリケーション（DI でDataStoreを差し替え）"""
+    """Test FastAPI application (DataStore replaced via DI)"""
 
 @pytest.fixture
 def client(app) -> TestClient:
-    """テスト用HTTPクライアント"""
+    """Test HTTP client"""
 ```
 
 ---
 
-## サービス層テスト
+## Service Layer Tests
 
 ### test_prediction_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_load_model | aml_pipeline.joblib が正常にロードされる |
-| test_load_feature_columns | feature_columns.joblib のカラムリストが期待通り |
-| test_load_cat_columns | cat_columns.joblib のカラムリストが期待通り |
-| test_predict_batch_adds_columns | predict_batch 後に prediction, fraud_score カラムが追加される |
-| test_predict_batch_score_range | fraud_score が 0.0〜1.0 の範囲内 |
-| test_predict_batch_labels | prediction が 0 または 1 のみ |
-| test_predict_batch_chunked | 大量データでもチャンク分割で処理できる |
-| test_predict_single | 1件の取引に対して予測結果が返る |
-| test_get_feature_importances | 特徴量重要度リストが空でなく importance 降順 |
-| test_column_name_mapping | スネークケース→モデル期待形式の変換が正しい |
-| test_handle_unknown_categories | 未知のカテゴリ値でもエラーにならない |
+| test_load_model | aml_pipeline.joblib loads successfully |
+| test_load_feature_columns | feature_columns.joblib column list matches expected |
+| test_load_cat_columns | cat_columns.joblib column list matches expected |
+| test_predict_batch_adds_columns | prediction and fraud_score columns are added after predict_batch |
+| test_predict_batch_score_range | fraud_score is within 0.0-1.0 range |
+| test_predict_batch_labels | prediction is only 0 or 1 |
+| test_predict_batch_chunked | Large datasets are processed via chunk splitting |
+| test_predict_single | Prediction result is returned for a single transaction |
+| test_get_feature_importances | Feature importance list is non-empty and sorted by importance descending |
+| test_column_name_mapping | snake_case to model-expected format conversion is correct |
+| test_handle_unknown_categories | Unknown category values do not cause errors |
 
 ### test_transaction_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_get_transactions_default | デフォルトパラメータで取引一覧が返却される |
-| test_get_transactions_filter_by_bank | from_bank フィルタが正しく動作する |
-| test_get_transactions_filter_by_date_range | 日付範囲フィルタが正しく動作する |
-| test_get_transactions_filter_by_amount | 金額範囲フィルタが正しく動作する |
-| test_get_transactions_pagination | page と per_page が正しく機能する |
-| test_get_transactions_sort | ソートカラム・順序が正しく動作する |
-| test_get_transaction_detail | 取引IDで詳細が取得できる |
-| test_get_transaction_detail_not_found | 存在しないIDで404が返る |
-| test_get_transaction_detail_has_feature_importances | 特徴量重要度が含まれる |
+| test_get_transactions_default | Transaction list is returned with default parameters |
+| test_get_transactions_filter_by_bank | from_bank filter works correctly |
+| test_get_transactions_filter_by_date_range | Date range filter works correctly |
+| test_get_transactions_filter_by_amount | Amount range filter works correctly |
+| test_get_transactions_pagination | page and per_page function correctly |
+| test_get_transactions_sort | Sort column and order work correctly |
+| test_get_transaction_detail | Detail is retrieved by transaction ID |
+| test_get_transaction_detail_not_found | Returns 404 for non-existent ID |
+| test_get_transaction_detail_has_feature_importances | Feature importances are included |
 
 ### test_network_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_get_network_single_hop | 1ホップでノードとエッジが返却される |
-| test_get_network_multi_hop | 複数ホップで到達可能なノードが含まれる |
-| test_get_network_with_date_filter | 日付フィルタが適用される |
-| test_get_network_node_has_fraud_score | ノードに fraud_score が含まれる |
-| test_get_network_origin_node_marked | 起点ノードに is_origin: true が設定される |
-| test_get_network_patterns_included | 関連パターンが含まれる |
-| test_get_network_node_limit | ノード数上限（200）を超えた場合に truncated: true が返る |
+| test_get_network_single_hop | Nodes and edges are returned for 1 hop |
+| test_get_network_multi_hop | Reachable nodes are included for multiple hops |
+| test_get_network_with_date_filter | Date filter is applied |
+| test_get_network_node_has_fraud_score | Nodes contain fraud_score |
+| test_get_network_origin_node_marked | Origin node has is_origin: true set |
+| test_get_network_patterns_included | Related patterns are included |
+| test_get_network_node_limit | When node count exceeds limit (200), truncated: true is returned |
 
 ### test_account_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_get_account_profile | 口座情報とサマリーが返却される |
-| test_get_account_not_found | 存在しない口座IDで404 |
-| test_get_account_transactions_all | 全取引が返却される |
-| test_get_account_transactions_sent | 送金のみフィルタされる |
-| test_get_account_transactions_received | 受取のみフィルタされる |
-| test_get_account_counterparties | 取引先一覧が正しく集計される |
-| test_get_account_counterparties_sort | ソートが正しく動作する |
-| test_get_account_timeline | 日別集計が正しい |
-| test_get_account_timeline_has_flagged | 不正取引日に has_flagged: true |
+| test_get_account_profile | Account information and summary are returned |
+| test_get_account_not_found | Returns 404 for non-existent account ID |
+| test_get_account_transactions_all | All transactions are returned |
+| test_get_account_transactions_sent | Only sent transactions are filtered |
+| test_get_account_transactions_received | Only received transactions are filtered |
+| test_get_account_counterparties | Counterparty list is correctly aggregated |
+| test_get_account_counterparties_sort | Sort works correctly |
+| test_get_account_timeline | Daily aggregation is correct |
+| test_get_account_timeline_has_flagged | has_flagged: true on days with fraud transactions |
 
 ### test_alert_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_get_alerts_default | 全アラートが fraud_score 降順で返却される |
-| test_get_alerts_filter_by_status | ステータスフィルタが動作する |
-| test_get_alerts_filter_by_score_range | スコア範囲フィルタが動作する |
-| test_get_alerts_filter_by_bank | 銀行フィルタが動作する |
-| test_get_alerts_pagination | ページネーションが動作する |
-| test_get_alerts_summary | サマリー件数が正しい |
-| test_update_alert_status | ステータス更新が反映される |
-| test_update_alert_status_not_found | 存在しないIDで404 |
-| test_update_alert_status_invalid | 不正なステータス値で422 |
+| test_get_alerts_default | All alerts are returned sorted by fraud_score descending |
+| test_get_alerts_filter_by_status | Status filter works |
+| test_get_alerts_filter_by_score_range | Score range filter works |
+| test_get_alerts_filter_by_bank | Bank filter works |
+| test_get_alerts_pagination | Pagination works |
+| test_get_alerts_summary | Summary counts are correct |
+| test_update_alert_status | Status update is reflected |
+| test_update_alert_status_not_found | Returns 404 for non-existent ID |
+| test_update_alert_status_invalid | Returns 422 for invalid status value |
 
 ### test_note_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_create_note | メモが正常に作成される |
-| test_create_note_transaction_not_found | 存在しない取引IDで404 |
-| test_create_note_empty_content | 空のcontentで422 |
-| test_create_note_content_too_long | 500文字超で422 |
-| test_get_notes_empty | メモが無い場合に空配列 |
-| test_get_notes_ordered | 新しいメモが先頭に来る |
-| test_get_notes_multiple | 複数メモが正しく返却される |
+| test_create_note | Note is created successfully |
+| test_create_note_transaction_not_found | Returns 404 for non-existent transaction ID |
+| test_create_note_empty_content | Returns 422 for empty content |
+| test_create_note_content_too_long | Returns 422 for content exceeding 500 characters |
+| test_get_notes_empty | Returns empty array when no notes exist |
+| test_get_notes_ordered | Newest note appears first |
+| test_get_notes_multiple | Multiple notes are returned correctly |
 
 ### test_analytics_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_heatmap_all_slots | 全曜日×時間帯のエントリが返却される（7×24=168件） |
-| test_heatmap_with_date_filter | 日付フィルタで件数が変わる |
-| test_currency_payment_matrix | 全組み合わせの不正率が0〜1の範囲 |
-| test_high_risk_banks_by_count | 件数ベースで降順ソートされる |
-| test_high_risk_banks_by_amount | 金額ベースで降順ソートされる |
-| test_high_risk_banks_limit | limit パラメータが機能する |
-| test_feature_importances | 特徴量リストが空でない |
-| test_pattern_distribution | パターン種別ごとの件数が返却される |
+| test_heatmap_all_slots | All day-of-week x hour entries are returned (7x24 = 168 entries) |
+| test_heatmap_with_date_filter | Count changes with date filter |
+| test_currency_payment_matrix | Fraud rate for all combinations is within 0-1 range |
+| test_high_risk_banks_by_count | Sorted in descending order by count |
+| test_high_risk_banks_by_amount | Sorted in descending order by amount |
+| test_high_risk_banks_limit | limit parameter functions correctly |
+| test_feature_importances | Feature list is non-empty |
+| test_pattern_distribution | Counts per pattern type are returned |
 
 ### test_master_service.py
-| テストケース | 検証内容 |
+| Test Case | Verification |
 |---|---|
-| test_get_banks | 銀行一覧が返却される |
-| test_get_currencies | 通貨一覧が返却される |
-| test_get_payment_formats | 支払手段一覧が返却される |
-| test_search_accounts | 前方一致で口座が検索される |
-| test_search_accounts_no_match | 一致なしで空配列 |
-| test_search_accounts_limit | limit パラメータが機能する |
+| test_get_banks | Bank list is returned |
+| test_get_currencies | Currency list is returned |
+| test_get_payment_formats | Payment format list is returned |
+| test_search_accounts | Accounts are searched by prefix match |
+| test_search_accounts_no_match | Returns empty array when no match |
+| test_search_accounts_limit | limit parameter functions correctly |
 
 ---
 
-## ルーターE2Eテスト
+## Router E2E Tests
 
-各ルーターについて以下の共通パターンをテストする:
+Common test patterns for each router:
 
-| 観点 | テスト内容 |
+| Aspect | Test Content |
 |---|---|
-| 正常系 | 200レスポンスとレスポンス構造の検証 |
-| ページネーション | meta.total, meta.page, meta.per_page の検証 |
-| 404 | 存在しないリソースへのアクセス |
-| 422 | 不正なパラメータ型の検証 |
-| フィルター | クエリパラメータが正しく適用される |
+| Success case | 200 response and response structure verification |
+| Pagination | meta.total, meta.page, meta.per_page verification |
+| 404 | Access to non-existent resource |
+| 422 | Invalid parameter type verification |
+| Filter | Query parameters are correctly applied |
 
-### ルーターテストファイル一覧
+### Router Test File List
 - `test_routers/test_transactions.py`
 - `test_routers/test_network.py`
 - `test_routers/test_accounts.py`
@@ -178,18 +178,18 @@ def client(app) -> TestClient:
 
 ---
 
-## テスト実行
+## Test Execution
 
 ```bash
-# 全テスト実行
+# Run all tests
 cd backend && pytest -v
 
-# サービス層のみ
+# Service layer only
 pytest tests/test_*_service.py -v
 
-# ルーターのみ
+# Routers only
 pytest tests/test_routers/ -v
 
-# カバレッジ付き
+# With coverage
 pytest --cov=app --cov-report=term-missing -v
 ```
